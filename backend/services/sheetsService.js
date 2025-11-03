@@ -3,6 +3,12 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
+// Função auxiliar para normalizar telefone (remover caracteres não numéricos)
+function normalizeTelefone(telefone) {
+  if (!telefone) return ''
+  return telefone.replace(/\D/g, '')
+}
+
 // Configurar autenticação do Google Sheets
 const getAuthClient = async () => {
   const auth = new google.auth.GoogleAuth({
@@ -61,6 +67,9 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
   }
 
+  // Normalizar telefone para ter apenas números
+  const telefoneNormalizado = normalizeTelefone(telefone)
+
   const authClient = await getAuthClient()
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
@@ -112,7 +121,7 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   const rows = allData.data.values || []
   
   // Procurar pelo telefone na coluna C (índice 2)
-  const existingUserIndex = rows.findIndex((row, index) => index > 0 && row[2] === telefone)
+  const existingUserIndex = rows.findIndex((row, index) => index > 0 && normalizeTelefone(row[2]) === telefoneNormalizado)
 
   if (existingUserIndex !== -1) {
     // Usuário existe, atualizar informações básicas (nome, email, empresa)
@@ -122,7 +131,7 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       range: `Usuarios!A${rowNumber}:D${rowNumber}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[nome, email, telefone, empresa]]
+        values: [[nome, email, telefoneNormalizado, empresa]]
       }
     })
   } else {
@@ -132,7 +141,7 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       range,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[nome, email, telefone, empresa, '', '', '', '', '']]
+        values: [[nome, email, telefoneNormalizado, empresa, '', '', '', '', '']]
       }
     })
   }
@@ -146,6 +155,9 @@ export async function getMedalhasByTelefone(telefone) {
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
   }
+
+  // Normalizar telefone para ter apenas números
+  const telefoneNormalizado = normalizeTelefone(telefone)
 
   const authClient = await getAuthClient()
   const sheets = google.sheets({ version: 'v4', auth: authClient })
@@ -165,7 +177,7 @@ export async function getMedalhasByTelefone(telefone) {
     }
 
     // Procurar pelo telefone na coluna C (índice 2)
-    const userRow = rows.slice(1).find(row => row[2] === telefone)
+    const userRow = rows.slice(1).find(row => normalizeTelefone(row[2]) === telefoneNormalizado)
     
     if (!userRow) {
       return []
@@ -203,12 +215,15 @@ export async function addMedalhaToUser({ telefone, medalhaId }) {
     throw new Error('ID da medalha deve ser entre 1 e 5')
   }
 
+  // Normalizar telefone para ter apenas números
+  const telefoneNormalizado = normalizeTelefone(telefone)
+
   const authClient = await getAuthClient()
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
   try {
     // Verificar se o usuário existe e já tem essa medalha
-    const medalhasExistentes = await getMedalhasByTelefone(telefone)
+    const medalhasExistentes = await getMedalhasByTelefone(telefoneNormalizado)
     if (medalhasExistentes.includes(medalhaId)) {
       throw new Error('Usuário já possui esta medalha')
     }
@@ -226,7 +241,7 @@ export async function addMedalhaToUser({ telefone, medalhaId }) {
     }
 
     // Procurar pelo telefone na coluna C (índice 2)
-    const userRowIndex = rows.findIndex((row, index) => index > 0 && row[2] === telefone)
+    const userRowIndex = rows.findIndex((row, index) => index > 0 && normalizeTelefone(row[2]) === telefoneNormalizado)
     
     if (userRowIndex === -1) {
       throw new Error('Usuário não encontrado')

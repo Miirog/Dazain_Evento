@@ -4,6 +4,12 @@ import './Form.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
+// Função auxiliar para normalizar telefone (remover caracteres não numéricos)
+function normalizeTelefone(telefone) {
+  if (!telefone) return ''
+  return telefone.replace(/\D/g, '')
+}
+
 function Form({ onSubmit }) {
   const [formData, setFormData] = useState({
     nome: '',
@@ -43,8 +49,14 @@ function Form({ onSubmit }) {
     }
 
     try {
-      await axios.post(`${API_URL}/submit`, formData)
-      onSubmit(formData.telefone)
+      // Normalizar telefone antes de enviar
+      const telefoneNormalizado = normalizeTelefone(formData.telefone)
+      const dadosParaEnviar = {
+        ...formData,
+        telefone: telefoneNormalizado
+      }
+      await axios.post(`${API_URL}/submit`, dadosParaEnviar)
+      onSubmit(telefoneNormalizado)
     } catch (err) {
       setError(
         err.response?.data?.message || 

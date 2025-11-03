@@ -259,6 +259,8 @@ A aba é criada automaticamente na primeira execução. Cada linha representa um
 
 - **[IMPLEMENTACAO_COMPLETA.md](IMPLEMENTACAO_COMPLETA.md)** - Visão técnica da implementação
 - **[GUIDELINE_CORES.md](GUIDELINE_CORES.md)** - Paleta de cores, fontes e diretrizes visuais
+- **[NOTA_NORMALIZACAO_TELEFONE.md](NOTA_NORMALIZACAO_TELEFONE.md)** - Sistema de normalização de telefones
+- **[DEPLOY_VERCEL.md](DEPLOY_VERCEL.md)** - Deploy do frontend na Vercel
 - **[backend/admin-medalhas-exemplo.js](backend/admin-medalhas-exemplo.js)** - Scripts de exemplo em Node.js
 
 ## 📞 Suporte
