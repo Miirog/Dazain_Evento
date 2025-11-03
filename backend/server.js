@@ -3,7 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser } from './services/sheetsService.js'
+import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao } from './services/sheetsService.js'
 
 dotenv.config()
 
@@ -55,7 +55,82 @@ app.post('/api/submit', async (req, res) => {
   }
 })
 
-// Endpoint para buscar medalhas de um usuário
+// ==================== NOVOS ENDPOINTS DE PONTOS ====================
+
+// Endpoint para buscar pontos de um usuário
+app.get('/api/pontos/:telefone', async (req, res) => {
+  try {
+    const { telefone } = req.params
+
+    if (!telefone) {
+      return res.status(400).json({
+        message: 'Telefone é obrigatório'
+      })
+    }
+
+    const pontosData = await getPontosByTelefone(telefone)
+
+    res.json({
+      success: true,
+      ...pontosData
+    })
+  } catch (error) {
+    console.error('Erro ao buscar pontos:', error)
+    res.status(500).json({
+      message: 'Erro ao buscar pontos. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// Endpoint para adicionar/atualizar pontos de uma ativação
+app.post('/api/pontos', async (req, res) => {
+  try {
+    const { telefone, ativacaoId, pontos } = req.body
+
+    // Validação
+    if (!telefone || ativacaoId === undefined || pontos === undefined) {
+      return res.status(400).json({
+        message: 'Telefone, Ativação e Pontos são obrigatórios'
+      })
+    }
+
+    const result = await addPontosToUser({ telefone, ativacaoId, pontos })
+
+    res.json({
+      success: true,
+      ...result
+    })
+  } catch (error) {
+    console.error('Erro ao adicionar pontos:', error)
+    res.status(500).json({
+      message: error.message || 'Erro ao adicionar pontos. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// Endpoint para buscar a maior pontuação total
+app.get('/api/pontos/maior', async (req, res) => {
+  try {
+    const result = await getMaiorPontuacao()
+
+    res.json({
+      success: true,
+      ...result
+    })
+  } catch (error) {
+    console.error('Erro ao buscar maior pontuação:', error)
+    res.status(500).json({
+      message: 'Erro ao buscar maior pontuação. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// ==================== ENDPOINTS ANTIGOS (COMPATIBILIDADE) ====================
+
+// Endpoint para buscar medalhas de um usuário (DEPRECATED - usar /api/pontos)
 app.get('/api/medalhas/:telefone', async (req, res) => {
   try {
     const { telefone } = req.params
@@ -81,7 +156,7 @@ app.get('/api/medalhas/:telefone', async (req, res) => {
   }
 })
 
-// Endpoint para adicionar medalha a um usuário
+// Endpoint para adicionar medalha a um usuário (DEPRECATED - usar /api/pontos)
 app.post('/api/medalhas', async (req, res) => {
   try {
     const { telefone, medalhaId } = req.body

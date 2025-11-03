@@ -1,0 +1,251 @@
+{
+	"info": {
+		"_postman_id": "dazain-api-collection",
+		"name": "Dazain API - Sistema de Medalhas",
+		"description": "Coleção completa para testar a API do sistema de medalhas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/health",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Verifica se a API está funcionando"
+			},
+			"response": []
+		},
+		{
+			"name": "Cadastrar Usuário",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"telefone\": \"17988349182\",\n  \"empresa\": \"Minha Empresa\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/submit",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"submit"
+					]
+				},
+				"description": "Cadastra um novo usuário no sistema"
+			},
+			"response": []
+		},
+		{
+			"name": "Enviar Medalha 3 para 17988349182",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"telefone\": \"17988349182\",\n  \"medalhaId\": 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/medalhas",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas"
+					]
+				},
+				"description": "⭐ EXEMPLO ESPECÍFICO: Envia a medalha 3 (Conquistador ⚔️) para o número 17988349182\n\n⚠️ IMPORTANTE: Os dados devem estar no BODY (JSON), não nos PARAMS!"
+			},
+			"response": []
+		},
+		{
+			"name": "Enviar Medalha 1 (Pioneiro)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"telefone\": \"17988349182\",\n  \"medalhaId\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/medalhas",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas"
+					]
+				},
+				"description": "Envia medalha 1 (Pioneiro 🏆)"
+			},
+			"response": []
+		},
+		{
+			"name": "Enviar Medalha 2 (Explorador)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"telefone\": \"17988349182\",\n  \"medalhaId\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/medalhas",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas"
+					]
+				},
+				"description": "Envia medalha 2 (Explorador 🔍)"
+			},
+			"response": []
+		},
+		{
+			"name": "Enviar Medalha 4 (Mestre)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"telefone\": \"17988349182\",\n  \"medalhaId\": 4\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/medalhas",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas"
+					]
+				},
+				"description": "Envia medalha 4 (Mestre 👑)"
+			},
+			"response": []
+		},
+		{
+			"name": "Enviar Medalha 5 (Lenda)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"telefone\": \"17988349182\",\n  \"medalhaId\": 5\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/medalhas",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas"
+					]
+				},
+				"description": "Envia medalha 5 (Lenda 🌟)"
+			},
+			"response": []
+		},
+		{
+			"name": "Buscar Medalhas do Usuário",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/medalhas/17988349182",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"medalhas",
+						"17988349182"
+					]
+				},
+				"description": "Busca todas as medalhas de um usuário pelo telefone"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		}
+	]
+}
+

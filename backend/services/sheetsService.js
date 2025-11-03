@@ -61,7 +61,7 @@ async function ensureSheetExists(sheets, spreadsheetId, sheetTitle) {
 
 export async function submitToSheets({ nome, email, telefone, empresa }) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:I'
+  const range = 'Usuarios!A:J' // Atualizado para incluir coluna J (PontosTotal)
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -80,17 +80,17 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   try {
     const headerResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Usuarios!A1:I1'
+      range: 'Usuarios!A1:J1'
     })
 
     // Se não houver cabeçalho, adiciona
     if (!headerResponse.data.values || headerResponse.data.values.length === 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Usuarios!A1:I1',
+        range: 'Usuarios!A1:J1',
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'Medalha1', 'Medalha2', 'Medalha3', 'Medalha4', 'Medalha5']]
+          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'PontosAtivacao1', 'PontosAtivacao2', 'PontosAtivacao3', 'PontosAtivacao4', 'PontosAtivacao5', 'PontosTotal']]
         }
       })
     }
@@ -101,10 +101,10 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       await new Promise(resolve => setTimeout(resolve, 1000))
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Usuarios!A1:I1',
+        range: 'Usuarios!A1:J1',
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'Medalha1', 'Medalha2', 'Medalha3', 'Medalha4', 'Medalha5']]
+          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'PontosAtivacao1', 'PontosAtivacao2', 'PontosAtivacao3', 'PontosAtivacao4', 'PontosAtivacao5', 'PontosTotal']]
         }
       })
     } else {
@@ -115,7 +115,7 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   // Verificar se usuário já existe
   const allData = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Usuarios!A:I'
+    range: 'Usuarios!A:J'
   })
 
   const rows = allData.data.values || []
@@ -135,22 +135,22 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       }
     })
   } else {
-    // Usuário não existe, adicionar nova linha
+    // Usuário não existe, adicionar nova linha com pontos zerados
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[nome, email, telefoneNormalizado, empresa, '', '', '', '', '']]
+        values: [[nome, email, telefoneNormalizado, empresa, 0, 0, 0, 0, 0, 0]]
       }
     })
   }
 }
 
-// Função para buscar medalhas de um usuário pelo telefone
-export async function getMedalhasByTelefone(telefone) {
+// Função para buscar pontos de um usuário pelo telefone
+export async function getPontosByTelefone(telefone) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:I'
+  const range = 'Usuarios!A:J'
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -173,46 +173,113 @@ export async function getMedalhasByTelefone(telefone) {
     
     if (rows.length <= 1) {
       // Apenas cabeçalho ou sem dados
-      return []
+      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0 }
     }
 
     // Procurar pelo telefone na coluna C (índice 2)
     const userRow = rows.slice(1).find(row => normalizeTelefone(row[2]) === telefoneNormalizado)
     
     if (!userRow) {
-      return []
+      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0 }
     }
 
-    // Colunas de medalhas são E, F, G, H, I (índices 4, 5, 6, 7, 8)
-    const medalhas = []
-    for (let i = 4; i <= 8; i++) {
-      if (userRow[i] && userRow[i].trim() !== '') {
-        medalhas.push(i - 3) // Converter índice para número da medalha (1-5)
-      }
+    // Colunas de pontos são E, F, G, H, I (índices 4, 5, 6, 7, 8)
+    // Coluna J (índice 9) é o total
+    const pontos = {
+      1: parseInt(userRow[4] || '0') || 0,
+      2: parseInt(userRow[5] || '0') || 0,
+      3: parseInt(userRow[6] || '0') || 0,
+      4: parseInt(userRow[7] || '0') || 0,
+      5: parseInt(userRow[8] || '0') || 0
     }
     
-    return medalhas
+    // Total pode estar na coluna J ou calcular
+    const total = parseInt(userRow[9] || '0') || (pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5])
+    
+    return { pontos, total }
   } catch (error) {
-    console.error('Erro ao buscar medalhas:', error)
+    console.error('Erro ao buscar pontos:', error)
     throw error
   }
 }
 
-// Função para adicionar uma medalha a um usuário
-export async function addMedalhaToUser({ telefone, medalhaId }) {
+// Função para buscar a maior pontuação total de todos os usuários
+export async function getMaiorPontuacao() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:I'
+  const range = 'Usuarios!A:J'
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
   }
 
-  if (!telefone || medalhaId === undefined) {
-    throw new Error('Telefone e Medalha são obrigatórios')
+  const authClient = await getAuthClient()
+  const sheets = google.sheets({ version: 'v4', auth: authClient })
+
+  try {
+    // Buscar todos os usuários
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range
+    })
+
+    const rows = response.data.values || []
+    
+    if (rows.length <= 1) {
+      // Apenas cabeçalho ou sem dados
+      return { maiorPontuacao: 1000 } // Valor padrão mínimo
+    }
+
+    // Procurar a maior pontuação total (coluna J - índice 9)
+    let maiorPontuacao = 1000 // Valor padrão mínimo (para o brinde 6)
+
+    rows.slice(1).forEach(row => {
+      // Coluna J (índice 9) é o total
+      let total = parseInt(row[9] || '0') || 0
+      
+      // Se não tiver total calculado, calcular a partir dos pontos individuais
+      if (total === 0 && row.length > 9) {
+        const pontos = {
+          1: parseInt(row[4] || '0') || 0,
+          2: parseInt(row[5] || '0') || 0,
+          3: parseInt(row[6] || '0') || 0,
+          4: parseInt(row[7] || '0') || 0,
+          5: parseInt(row[8] || '0') || 0
+        }
+        total = pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5]
+      }
+      
+      if (total > maiorPontuacao) {
+        maiorPontuacao = total
+      }
+    })
+    
+    // Se não encontrou nenhum usuário com mais de 1000 pontos, retorna 1000
+    return { maiorPontuacao: maiorPontuacao < 1000 ? 1000 : maiorPontuacao }
+  } catch (error) {
+    console.error('Erro ao buscar maior pontuação:', error)
+    throw error
+  }
+}
+
+// Função para adicionar/atualizar pontos de uma ativação
+export async function addPontosToUser({ telefone, ativacaoId, pontos }) {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID
+  const range = 'Usuarios!A:J'
+
+  if (!spreadsheetId) {
+    throw new Error('GOOGLE_SHEET_ID não configurado')
   }
 
-  if (medalhaId < 1 || medalhaId > 5) {
-    throw new Error('ID da medalha deve ser entre 1 e 5')
+  if (!telefone || ativacaoId === undefined || pontos === undefined) {
+    throw new Error('Telefone, Ativação e Pontos são obrigatórios')
+  }
+
+  if (ativacaoId < 1 || ativacaoId > 5) {
+    throw new Error('ID da ativação deve ser entre 1 e 5')
+  }
+
+  if (typeof pontos !== 'number' || pontos < 0) {
+    throw new Error('Pontos deve ser um número positivo')
   }
 
   // Normalizar telefone para ter apenas números
@@ -222,10 +289,18 @@ export async function addMedalhaToUser({ telefone, medalhaId }) {
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
   try {
-    // Verificar se o usuário existe e já tem essa medalha
-    const medalhasExistentes = await getMedalhasByTelefone(telefoneNormalizado)
-    if (medalhasExistentes.includes(medalhaId)) {
-      throw new Error('Usuário já possui esta medalha')
+    // Buscar pontos atuais do usuário
+    const pontosAtuais = await getPontosByTelefone(telefoneNormalizado)
+    const pontosAtivacaoAtual = pontosAtuais.pontos[ativacaoId] || 0
+
+    // Só atualizar se os novos pontos forem maiores
+    if (pontos <= pontosAtivacaoAtual) {
+      return { 
+        success: true, 
+        message: 'Pontos não atualizados. Valor atual é maior ou igual.',
+        pontosAtuais: pontosAtuais.pontos,
+        total: pontosAtuais.total
+      }
     }
 
     // Buscar todos os usuários para encontrar a linha
@@ -248,25 +323,66 @@ export async function addMedalhaToUser({ telefone, medalhaId }) {
     }
 
     const rowNumber = userRowIndex + 1
-    // Coluna da medalha: E=5, F=6, G=7, H=8, I=9
-    const columnLetter = String.fromCharCode(69 + medalhaId - 1) // E=69, F=70, etc.
+    // Coluna da ativação: E=5, F=6, G=7, H=8, I=9 (índices 4, 5, 6, 7, 8)
+    const columnIndex = 4 + ativacaoId - 1 // E=4, F=5, etc.
+    const columnLetter = String.fromCharCode(69 + ativacaoId - 1) // E=69, F=70, etc.
     
-    // Adicionar a data atual como valor da medalha
-    const dataAtual = new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
-    
+    // Atualizar os pontos da ativação
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `Usuarios!${columnLetter}${rowNumber}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[dataAtual]]
+        values: [[pontos]]
       }
     })
 
-    return { success: true }
+    // Recalcular o total
+    const novosPontos = { ...pontosAtuais.pontos, [ativacaoId]: pontos }
+    const novoTotal = novosPontos[1] + novosPontos[2] + novosPontos[3] + novosPontos[4] + novosPontos[5]
+
+    // Atualizar a coluna de total (J)
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Usuarios!J${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [[novoTotal]]
+      }
+    })
+
+    return { 
+      success: true, 
+      message: 'Pontos atualizados com sucesso!',
+      pontos: novosPontos,
+      total: novoTotal
+    }
   } catch (error) {
-    console.error('Erro ao adicionar medalha:', error)
+    console.error('Erro ao adicionar pontos:', error)
     throw error
   }
+}
+
+// Manter função antiga para compatibilidade (retornando array vazio ou deprecada)
+export async function getMedalhasByTelefone(telefone) {
+  console.warn('getMedalhasByTelefone está deprecated. Use getPontosByTelefone.')
+  const pontos = await getPontosByTelefone(telefone)
+  // Converter pontos em "medalhas" baseado em pontuação (para compatibilidade)
+  const medalhas = []
+  for (let i = 1; i <= 5; i++) {
+    if (pontos.pontos[i] > 0) {
+      medalhas.push(i)
+    }
+  }
+  return medalhas
+}
+
+// Manter função antiga para compatibilidade
+export async function addMedalhaToUser({ telefone, medalhaId }) {
+  console.warn('addMedalhaToUser está deprecated. Use addPontosToUser.')
+  // Converter medalha em pontos (valores padrão)
+  const pontosPorMedalha = { 1: 100, 2: 300, 3: 500, 4: 700, 5: 1000 }
+  const pontos = pontosPorMedalha[medalhaId] || 100
+  return await addPontosToUser({ telefone, ativacaoId: medalhaId, pontos })
 }
 

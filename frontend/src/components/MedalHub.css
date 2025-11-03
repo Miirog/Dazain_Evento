@@ -78,6 +78,40 @@
   margin-bottom: 40px;
 }
 
+.pontos-total-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0 30px;
+}
+
+.pontos-total-card {
+  background: linear-gradient(135deg, #FF007F 0%, #FF4DC4 50%, #FF007F 100%);
+  border-radius: 20px;
+  padding: 25px 40px;
+  box-shadow: 0 10px 30px rgba(255, 0, 127, 0.3);
+  text-align: center;
+  min-width: 200px;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.pontos-total-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pontos-total-value {
+  font-size: 2.5rem;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-family: 'IBrand', 'Outfit', sans-serif;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
 .loading-spinner {
   text-align: center;
   padding: 40px;
@@ -176,6 +210,17 @@
   animation: scaleIn 0.5s ease;
 }
 
+.badge-bloqueada {
+  display: inline-block;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+  background-color: #e0e0e0;
+  margin-top: 10px;
+}
+
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -220,6 +265,17 @@
 @media (max-width: 768px) {
   .hub-title {
     font-size: 1.8rem;
+  }
+
+  .pontos-total-card {
+    padding: 20px 30px;
+    min-width: auto;
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .pontos-total-value {
+    font-size: 2rem;
   }
 
   .refresh-button {
