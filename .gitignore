@@ -12,6 +12,11 @@ frontend/.env
 frontend/.env.local
 frontend/.env.*.local
 
+# Allow example files
+!.env.example
+!frontend/.env.example
+!backend/.env.example
+
 # Build outputs
 frontend/dist/
 frontend/build/

@@ -32,7 +32,7 @@ function App() {
       <div className="container">
         <div className="logo-container">
           <img 
-            src="/logo.png" 
+            src="/logo-dazain-icon-04.svg" 
             alt="Logo Dazain" 
             className="logo"
             onError={(e) => {
