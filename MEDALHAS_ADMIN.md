@@ -62,18 +62,17 @@ adicionar_medalha('(11) 98765-4321', 1)
 Você também pode adicionar medalhas diretamente na planilha do Google Sheets:
 
 1. Abra sua planilha no Google Sheets
-2. Vá para a aba "Medalhas"
-3. Adicione uma nova linha com:
-   - **Telefone**: Número de telefone do usuário (exatamente como cadastrado)
-   - **Medalha**: Número da medalha (1 a 5)
-   - **Data**: Data da conquista (formato: YYYY-MM-DD)
+2. Vá para a aba **"Usuarios"**
+3. Encontre o usuário pelo telefone na coluna C
+4. Na linha do usuário, localize a coluna da medalha desejada:
+   - **Medalha1** = Coluna E
+   - **Medalha2** = Coluna F
+   - **Medalha3** = Coluna G
+   - **Medalha4** = Coluna H
+   - **Medalha5** = Coluna I
+5. Adicione a data de conquista (formato: YYYY-MM-DD)
 
-Exemplo de linha:
-```
-| Telefone          | Medalha | Data       |
-|-------------------|---------|------------|
-| (11) 98765-4321   | 1       | 2024-01-15 |
-```
+**Exemplo**: Para dar a Medalha 2 ao usuário com telefone (11) 98765-4321, localize a linha dele e adicione `2024-01-15` na coluna F.
 
 ## Medalhas Disponíveis
 
@@ -110,18 +109,26 @@ https://seu-app.railway.app/api/medalhas/(11)%2098765-4321
 
 ## Estrutura da Planilha
 
-### Aba "Cadastros"
-Armazena os dados do formulário de cadastro:
-- Nome
-- Email
-- Telefone
-- Empresa
+### Aba "Usuarios"
+Armazena todos os dados dos usuários em uma única planilha:
 
-### Aba "Medalhas"
-Armazena as medalhas conquistadas pelos usuários:
-- Telefone (chave de ligação com Cadastros)
-- Medalha (ID da medalha de 1 a 5)
-- Data (data da conquista)
+**Colunas:**
+- **A**: Nome
+- **B**: Email
+- **C**: Telefone (chave primária - identificador único)
+- **D**: Empresa
+- **E**: Medalha1 (data de conquista ou vazia)
+- **F**: Medalha2 (data de conquista ou vazia)
+- **G**: Medalha3 (data de conquista ou vazia)
+- **H**: Medalha4 (data de conquista ou vazia)
+- **I**: Medalha5 (data de conquista ou vazia)
+
+**Vantagens desta estrutura:**
+- ✅ Um usuário = uma linha
+- ✅ Fácil de visualizar todas as medalhas de um usuário
+- ✅ Permite ter medalhas não sequenciais (ex: 1, 3 e 5)
+- ✅ Data de conquista registrada para cada medalha
+- ✅ Consultas mais rápidas
 
 ## Automação Sugerida
 
@@ -159,8 +166,8 @@ O telefone não está cadastrado. Verifique a planilha de Cadastros.
 ### Erro: "ID da medalha deve ser entre 1 e 5"
 Use apenas IDs de 1 a 5.
 
-### As abas não existem
-As abas são criadas automaticamente na primeira execução. Se houver problema, crie manualmente no Google Sheets:
-1. Cadastros (4 colunas: Nome, Email, Telefone, Empresa)
-2. Medalhas (3 colunas: Telefone, Medalha, Data)
+### A aba não existe
+A aba é criada automaticamente na primeira execução. Se houver problema, crie manualmente no Google Sheets:
+1. Aba chamada "Usuarios"
+2. Cabeçalho: Nome | Email | Telefone | Empresa | Medalha1 | Medalha2 | Medalha3 | Medalha4 | Medalha5
 

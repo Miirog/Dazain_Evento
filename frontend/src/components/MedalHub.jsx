@@ -6,11 +6,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Nomes e descrições das medalhas
 const MEDALHAS_INFO = {
-  1: { nome: 'Pioneiro', descricao: 'Primeira conquista!', cor: '#FFD700' },
-  2: { nome: 'Explorador', descricao: 'Descobrindo o caminho', cor: '#C0C0C0' },
-  3: { nome: 'Conquistador', descricao: 'Meio caminho andado', cor: '#CD7F32' },
-  4: { nome: 'Mestre', descricao: 'Quase lá!', cor: '#9370DB' },
-  5: { nome: 'Lenda', descricao: 'Completo!', cor: '#FF1493' }
+  1: { nome: 'Fotógrafo', descricao: 'Tirou uma foto com nosso mascote!', cor: '#FF007F' },
+  2: { nome: 'Explorador', descricao: 'Encontrou todas as curiosidades!', cor: '#39FF14' },
+  3: { nome: 'Ninja', descricao: 'Cortou todos os produtos falsos!', cor: '#3D026D' },
+  4: { nome: 'Alpinista', descricao: 'Escalou a plataforma até o fim!', cor: '#FF007F' },
+  5: { nome: 'Indomável', descricao: 'Escapou do nosso desafio!', cor: '#1E002B' }
 }
 
 function MedalHub({ telefone }) {
@@ -18,18 +18,18 @@ function MedalHub({ telefone }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (telefone) {
-      fetchMedalhas()
-    }
-  }, [telefone])
-
-  const fetchMedalhas = async () => {
+  const fetchMedalhas = async (skipLoading = false) => {
     try {
-      setLoading(true)
+      if (!skipLoading) {
+        setLoading(true)
+      }
       const response = await axios.get(`${API_URL}/medalhas/${telefone}`)
-      setMedalhasUsuario(response.data.medalhas)
+      const medalhas = response.data.medalhas
+      setMedalhasUsuario(medalhas)
       setError('')
+      
+      // Salvar no localStorage
+      localStorage.setItem(`medalhas_${telefone}`, JSON.stringify(medalhas))
     } catch (err) {
       console.error('Erro ao buscar medalhas:', err)
       setError('Erro ao carregar medalhas')
@@ -37,6 +37,28 @@ function MedalHub({ telefone }) {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (telefone) {
+      // Carregar do localStorage primeiro
+      const cachedMedalhas = localStorage.getItem(`medalhas_${telefone}`)
+      if (cachedMedalhas) {
+        try {
+          const medalhas = JSON.parse(cachedMedalhas)
+          setMedalhasUsuario(medalhas)
+          // Não mostrar loading se já tiver cache
+          fetchMedalhas(true)
+        } catch (err) {
+          console.error('Erro ao carregar medalhas do cache:', err)
+          fetchMedalhas()
+        }
+      } else {
+        // Sem cache, buscar do servidor
+        fetchMedalhas()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [telefone])
 
   const renderMedalha = (medalhaId) => {
     const info = MEDALHAS_INFO[medalhaId]
@@ -75,7 +97,9 @@ function MedalHub({ telefone }) {
 
   return (
     <div className="medal-hub">
-      <h2 className="hub-title">Suas Medalhas</h2>
+      <div className="hub-title-container">
+        <h2 className="hub-title">Suas Medalhas</h2>
+      </div>
       <p className="hub-subtitle">
         Você conquistou {medalhasUsuario.length} de {Object.keys(MEDALHAS_INFO).length} medalhas
       </p>
@@ -98,6 +122,18 @@ function MedalHub({ telefone }) {
         <span className="progress-text">
           {Math.round((medalhasUsuario.length / Object.keys(MEDALHAS_INFO).length) * 100)}% Completo
         </span>
+      </div>
+      
+      <div className="refresh-button-container">
+        <button 
+          onClick={fetchMedalhas} 
+          disabled={loading}
+          className="refresh-button"
+          title="Recarregar medalhas"
+        >
+          <span className="refresh-icon">{loading ? '⏳' : '🔄'}</span>
+          {loading ? 'Carregando...' : 'Atualizar'}
+        </button>
       </div>
     </div>
   )

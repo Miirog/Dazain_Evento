@@ -5,10 +5,10 @@
 ### Backend
 
 ✅ **Serviços Google Sheets** (`backend/services/sheetsService.js`):
-- `submitToSheets()`: Salva cadastros na aba "Cadastros"
+- `submitToSheets()`: Salva/atualiza cadastros na aba "Usuarios"
 - `getMedalhasByTelefone()`: Busca medalhas de um usuário por telefone
 - `addMedalhaToUser()`: Adiciona uma medalha a um usuário
-- `ensureSheetExists()`: Cria automaticamente as abas "Cadastros" e "Medalhas" se não existirem
+- `ensureSheetExists()`: Cria automaticamente a aba "Usuarios" se não existir
 
 ✅ **Endpoints da API** (`backend/server.js`):
 - `POST /api/submit`: Submete formulário de cadastro
@@ -22,6 +22,7 @@
 - Barra de progresso mostrando % de medalhas conquistadas
 - Cards interativos com cores diferentes para cada medalha
 - Busca automática das medalhas do usuário via API
+- Botão de recarregar para atualizar medalhas em tempo real
 
 ✅ **Integração no App** (`frontend/src/App.jsx`):
 - Após cadastro, mostra automaticamente o Hub de Medalhas
@@ -43,9 +44,10 @@
 ### Fluxo do Usuário
 
 1. **Cadastro**: Usuário preenche o formulário (nome, email, telefone, empresa)
-2. **Envio**: Dados são salvos na aba "Cadastros" do Google Sheets
+2. **Envio**: Dados são salvos na aba "Usuarios" do Google Sheets
 3. **Hub**: Usuário é redirecionado para o Hub de Medalhas
 4. **Visualização**: Sistema busca e exibe as medalhas conquistadas (inicialmente nenhuma)
+5. **Recarregar**: Usuário pode clicar em "Recarregar" para ver novas medalhas
 
 ### Adicionando Medalhas
 
@@ -91,17 +93,17 @@ As mesmas variáveis do cadastro (Google Sheets API):
 
 ### Estrutura da Planilha
 
-O sistema cria automaticamente duas abas:
+O sistema cria automaticamente uma única aba "Usuarios":
 
-**Cadastros**:
 ```
-Nome | Email | Telefone | Empresa
+Nome | Email | Telefone | Empresa | Medalha1 | Medalha2 | Medalha3 | Medalha4 | Medalha5
 ```
 
-**Medalhas**:
-```
-Telefone | Medalha | Data
-```
+**Vantagens:**
+- ✅ Um usuário = uma linha
+- ✅ Fácil de visualizar
+- ✅ Medalhas não sequenciais (ex: 1, 3, 5)
+- ✅ Data de conquista em cada coluna
 
 ## 🚀 Próximos Passos
 

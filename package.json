@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "axios": "^1.6.2",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3"
   }

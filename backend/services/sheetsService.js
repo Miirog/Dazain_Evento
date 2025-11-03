@@ -55,7 +55,7 @@ async function ensureSheetExists(sheets, spreadsheetId, sheetTitle) {
 
 export async function submitToSheets({ nome, email, telefone, empresa }) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Cadastros!A:D'
+  const range = 'Usuarios!A:I'
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -64,24 +64,24 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   const authClient = await getAuthClient()
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
-  // Garantir que a aba Cadastros existe
-  await ensureSheetExists(sheets, spreadsheetId, 'Cadastros')
+  // Garantir que a aba Usuarios existe
+  await ensureSheetExists(sheets, spreadsheetId, 'Usuarios')
 
   // Primeiro, vamos verificar se o cabeçalho existe
   try {
     const headerResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Cadastros!A1:D1'
+      range: 'Usuarios!A1:I1'
     })
 
     // Se não houver cabeçalho, adiciona
     if (!headerResponse.data.values || headerResponse.data.values.length === 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Cadastros!A1:D1',
+        range: 'Usuarios!A1:I1',
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa']]
+          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'Medalha1', 'Medalha2', 'Medalha3', 'Medalha4', 'Medalha5']]
         }
       })
     }
@@ -92,10 +92,10 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       await new Promise(resolve => setTimeout(resolve, 1000))
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Cadastros!A1:D1',
+        range: 'Usuarios!A1:I1',
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa']]
+          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'Medalha1', 'Medalha2', 'Medalha3', 'Medalha4', 'Medalha5']]
         }
       })
     } else {
@@ -103,21 +103,45 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
     }
   }
 
-  // Adiciona os dados
-  await sheets.spreadsheets.values.append({
+  // Verificar se usuário já existe
+  const allData = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range,
-    valueInputOption: 'USER_ENTERED',
-    resource: {
-      values: [[nome, email, telefone, empresa]]
-    }
+    range: 'Usuarios!A:I'
   })
+
+  const rows = allData.data.values || []
+  
+  // Procurar pelo telefone na coluna C (índice 2)
+  const existingUserIndex = rows.findIndex((row, index) => index > 0 && row[2] === telefone)
+
+  if (existingUserIndex !== -1) {
+    // Usuário existe, atualizar informações básicas (nome, email, empresa)
+    const rowNumber = existingUserIndex + 1
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Usuarios!A${rowNumber}:D${rowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [[nome, email, telefone, empresa]]
+      }
+    })
+  } else {
+    // Usuário não existe, adicionar nova linha
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [[nome, email, telefone, empresa, '', '', '', '', '']]
+      }
+    })
+  }
 }
 
 // Função para buscar medalhas de um usuário pelo telefone
 export async function getMedalhasByTelefone(telefone) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Medalhas!A:C'
+  const range = 'Usuarios!A:I'
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -126,11 +150,8 @@ export async function getMedalhasByTelefone(telefone) {
   const authClient = await getAuthClient()
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
-  // Garantir que a aba Medalhas existe
-  await ensureSheetExists(sheets, spreadsheetId, 'Medalhas')
-
   try {
-    // Buscar todas as medalhas
+    // Buscar todos os usuários
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range
@@ -138,40 +159,29 @@ export async function getMedalhasByTelefone(telefone) {
 
     const rows = response.data.values || []
     
-    // Verificar se existe cabeçalho
-    if (rows.length === 0) {
-      // Criar cabeçalho se não existir
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: 'Medalhas!A1:C1',
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [['Telefone', 'Medalha', 'Data']]
-        }
-      })
+    if (rows.length <= 1) {
+      // Apenas cabeçalho ou sem dados
       return []
     }
 
-    // Filtrar medalhas pelo telefone
-    const medalhasDoUsuario = rows.slice(1).filter(row => row[0] === telefone)
+    // Procurar pelo telefone na coluna C (índice 2)
+    const userRow = rows.slice(1).find(row => row[2] === telefone)
     
-    // Retornar apenas os IDs das medalhas
-    return medalhasDoUsuario.map(row => parseInt(row[1])).filter(id => !isNaN(id))
-  } catch (error) {
-    console.error('Erro ao buscar medalhas:', error)
-    // Se erro for 400, a aba não existe ainda, tentar novamente após um delay
-    if (error.code === 400) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: 'Medalhas!A1:C1',
-        valueInputOption: 'USER_ENTERED',
-        resource: {
-          values: [['Telefone', 'Medalha', 'Data']]
-        }
-      })
+    if (!userRow) {
       return []
     }
+
+    // Colunas de medalhas são E, F, G, H, I (índices 4, 5, 6, 7, 8)
+    const medalhas = []
+    for (let i = 4; i <= 8; i++) {
+      if (userRow[i] && userRow[i].trim() !== '') {
+        medalhas.push(i - 3) // Converter índice para número da medalha (1-5)
+      }
+    }
+    
+    return medalhas
+  } catch (error) {
+    console.error('Erro ao buscar medalhas:', error)
     throw error
   }
 }
@@ -179,7 +189,7 @@ export async function getMedalhasByTelefone(telefone) {
 // Função para adicionar uma medalha a um usuário
 export async function addMedalhaToUser({ telefone, medalhaId }) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Medalhas!A:C'
+  const range = 'Usuarios!A:I'
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -197,20 +207,44 @@ export async function addMedalhaToUser({ telefone, medalhaId }) {
   const sheets = google.sheets({ version: 'v4', auth: authClient })
 
   try {
-    // Verificar se o usuário já tem essa medalha
+    // Verificar se o usuário existe e já tem essa medalha
     const medalhasExistentes = await getMedalhasByTelefone(telefone)
     if (medalhasExistentes.includes(medalhaId)) {
       throw new Error('Usuário já possui esta medalha')
     }
 
-    // Adicionar a medalha
-    const dataAtual = new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
-    await sheets.spreadsheets.values.append({
+    // Buscar todos os usuários para encontrar a linha
+    const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range,
+      range
+    })
+
+    const rows = response.data.values || []
+    
+    if (rows.length <= 1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    // Procurar pelo telefone na coluna C (índice 2)
+    const userRowIndex = rows.findIndex((row, index) => index > 0 && row[2] === telefone)
+    
+    if (userRowIndex === -1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const rowNumber = userRowIndex + 1
+    // Coluna da medalha: E=5, F=6, G=7, H=8, I=9
+    const columnLetter = String.fromCharCode(69 + medalhaId - 1) // E=69, F=70, etc.
+    
+    // Adicionar a data atual como valor da medalha
+    const dataAtual = new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
+    
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Usuarios!${columnLetter}${rowNumber}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[telefone, medalhaId.toString(), dataAtual]]
+        values: [[dataAtual]]
       }
     })
 

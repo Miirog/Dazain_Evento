@@ -11,12 +11,35 @@
   margin: 0 auto;
 }
 
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  max-width: 180px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.logo-placeholder {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #FF007F;
+  text-align: center;
+  letter-spacing: 3px;
+  font-family: 'IBrand', 'Outfit', sans-serif;
+}
+
 .title {
   font-size: 2.5rem;
-  color: #333;
+  color: #1E002B;
   text-align: center;
   margin-bottom: 10px;
-  font-weight: 700;
+  font-family: 'IBrand', 'Outfit', sans-serif;
+  font-weight: 800;
 }
 
 .subtitle {
@@ -29,6 +52,16 @@
 @media (max-width: 768px) {
   .container {
     padding: 30px 20px;
+  }
+
+  .logo {
+    max-width: 140px;
+    max-height: 60px;
+  }
+
+  .logo-placeholder {
+    font-size: 2rem;
+    letter-spacing: 2px;
   }
 
   .title {

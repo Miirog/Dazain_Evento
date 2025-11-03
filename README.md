@@ -23,7 +23,31 @@ Landing page com formulário de cadastro e sistema de medalhas que salva dados n
 npm run install:all
 ```
 
-### 2. Configurar Google Sheets API
+### 2. Adicionar Logo da Empresa (Opcional)
+
+Coloque sua logo em:
+```
+frontend/public/logo.png
+```
+
+Formatos aceitos: PNG, SVG, JPG, WEBP  
+Tamanho recomendado: 300x100px
+
+Se não adicionar a logo, aparecerá um placeholder "🎯 DAZAIN" em magenta.
+
+### 3. Adicionar Fonte IBrand (Opcional)
+
+Coloque os arquivos da fonte em:
+```
+frontend/public/fonts/
+  - IBrand.woff2
+  - IBrand.woff
+```
+
+📚 **[Veja instruções completas](frontend/public/README_FONTES.md)**  
+💡 Se não adicionar, o sistema usará Outfit como fallback automaticamente.
+
+### 4. Configurar Google Sheets API
 
 #### Passo 1: Criar projeto no Google Cloud Console
 1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
@@ -203,12 +227,39 @@ curl https://seu-app.railway.app/api/medalhas/(11)%2098765-4321
 
 ### Estrutura da Planilha
 
-A planilha Google Sheets possui duas abas:
+A planilha Google Sheets possui uma única aba:
 
-1. **Cadastros**: Dados do formulário (Nome, Email, Telefone, Empresa)
-2. **Medalhas**: Conquistas dos usuários (Telefone, Medalha, Data)
+**Usuarios** com as seguintes colunas:
+- Nome
+- Email
+- Telefone
+- Empresa
+- Medalha1 (data de conquista)
+- Medalha2 (data de conquista)
+- Medalha3 (data de conquista)
+- Medalha4 (data de conquista)
+- Medalha5 (data de conquista)
 
-As abas são criadas automaticamente na primeira execução.
+A aba é criada automaticamente na primeira execução. Cada linha representa um usuário único identificado pelo telefone.
+
+## 📚 Documentação
+
+### 🚀 Começando
+
+- **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Setup rápido em 10 passos (recomendado para iniciantes)
+
+### 📖 Guias Detalhados
+
+- **[GUIA_CONFIGURACAO.md](GUIA_CONFIGURACAO.md)** - Configuração completa passo a passo (Google Sheets + Railway)
+- **[TESTES_API.md](TESTES_API.md)** - Como testar a API localmente e no Railway
+- **[MEDALHAS_ADMIN.md](MEDALHAS_ADMIN.md)** - Como adicionar e gerenciar medalhas
+- **[LOCALSTORAGE_INFO.md](LOCALSTORAGE_INFO.md)** - Sistema de cache local e persistência
+
+### 🔧 Recursos Avançados
+
+- **[IMPLEMENTACAO_COMPLETA.md](IMPLEMENTACAO_COMPLETA.md)** - Visão técnica da implementação
+- **[GUIDELINE_CORES.md](GUIDELINE_CORES.md)** - Paleta de cores, fontes e diretrizes visuais
+- **[backend/admin-medalhas-exemplo.js](backend/admin-medalhas-exemplo.js)** - Scripts de exemplo em Node.js
 
 ## 📞 Suporte
 
@@ -217,4 +268,5 @@ Em caso de problemas:
 2. Confirme que o service account tem permissão na planilha
 3. Verifique os logs no Railway
 4. Confirme que todas as variáveis de ambiente estão configuradas
+5. Execute os testes automatizados: `node test-api.js` ou `.\test-api.ps1`
 
