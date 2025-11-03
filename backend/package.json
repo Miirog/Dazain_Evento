@@ -1,0 +1,18 @@
+{
+  "name": "dazain-lp-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "googleapis": "^126.0.1",
+    "dotenv": "^16.3.1"
+  }
+}
+
+
