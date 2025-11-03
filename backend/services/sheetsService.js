@@ -136,14 +136,39 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
     })
   } else {
     // Usuário não existe, adicionar nova linha com pontos zerados
+    // Usar USER_ENTERED para nome, email, telefone e empresa (texto)
+    // Depois atualizar pontos com RAW para evitar interpretação como data
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[nome, email, telefoneNormalizado, empresa, 0, 0, 0, 0, 0, 0]]
+        values: [[nome, email, telefoneNormalizado, empresa, '', '', '', '', '', '']]
       }
     })
+    
+    // Buscar a linha recém-criada e atualizar pontos com RAW
+    const allDataAfter = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Usuarios!A:J'
+    })
+    const rowsAfter = allDataAfter.data.values || []
+    const newUserRowIndex = rowsAfter.findIndex((row, index) => 
+      index > 0 && normalizeTelefone(row[2]) === telefoneNormalizado
+    )
+    
+    if (newUserRowIndex !== -1) {
+      const newRowNumber = newUserRowIndex + 1
+      // Atualizar colunas de pontos (E-J) com RAW
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Usuarios!E${newRowNumber}:J${newRowNumber}`,
+        valueInputOption: 'RAW',
+        resource: {
+          values: [[0, 0, 0, 0, 0, 0]]
+        }
+      })
+    }
   }
 }
 
@@ -328,10 +353,11 @@ export async function addPontosToUser({ telefone, ativacaoId, pontos }) {
     const columnLetter = String.fromCharCode(69 + ativacaoId - 1) // E=69, F=70, etc.
     
     // Atualizar os pontos da ativação
+    // Usar RAW para evitar que o Google Sheets interprete como data
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `Usuarios!${columnLetter}${rowNumber}`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       resource: {
         values: [[pontos]]
       }
@@ -342,10 +368,11 @@ export async function addPontosToUser({ telefone, ativacaoId, pontos }) {
     const novoTotal = novosPontos[1] + novosPontos[2] + novosPontos[3] + novosPontos[4] + novosPontos[5]
 
     // Atualizar a coluna de total (J)
+    // Usar RAW para evitar que o Google Sheets interprete como data
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `Usuarios!J${rowNumber}`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       resource: {
         values: [[novoTotal]]
       }
