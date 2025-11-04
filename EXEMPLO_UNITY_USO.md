@@ -266,3 +266,4 @@ public class EnviarMedalha3 : MonoBehaviour
 - [Documentação UnityWebRequest](https://docs.unity3d.com/ScriptReference/Networking.UnityWebRequest.html)
 - [Sistema de Medalhas - Documentação Completa](IMPLEMENTACAO_COMPLETA.md)
 
+

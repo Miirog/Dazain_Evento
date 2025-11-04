@@ -57,6 +57,24 @@ app.post('/api/submit', async (req, res) => {
 
 // ==================== NOVOS ENDPOINTS DE PONTOS ====================
 
+// Endpoint para buscar a maior pontuação total (DEVE VIR ANTES DE /api/pontos/:telefone)
+app.get('/api/pontos/maior', async (req, res) => {
+  try {
+    const result = await getMaiorPontuacao()
+
+    res.json({
+      success: true,
+      ...result
+    })
+  } catch (error) {
+    console.error('Erro ao buscar maior pontuação:', error)
+    res.status(500).json({
+      message: 'Erro ao buscar maior pontuação. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
 // Endpoint para buscar pontos de um usuário
 app.get('/api/pontos/:telefone', async (req, res) => {
   try {
@@ -105,24 +123,6 @@ app.post('/api/pontos', async (req, res) => {
     console.error('Erro ao adicionar pontos:', error)
     res.status(500).json({
       message: error.message || 'Erro ao adicionar pontos. Tente novamente mais tarde.',
-      error: error.message
-    })
-  }
-})
-
-// Endpoint para buscar a maior pontuação total
-app.get('/api/pontos/maior', async (req, res) => {
-  try {
-    const result = await getMaiorPontuacao()
-
-    res.json({
-      success: true,
-      ...result
-    })
-  } catch (error) {
-    console.error('Erro ao buscar maior pontuação:', error)
-    res.status(500).json({
-      message: 'Erro ao buscar maior pontuação. Tente novamente mais tarde.',
       error: error.message
     })
   }

@@ -251,35 +251,39 @@ export async function getMaiorPontuacao() {
     
     if (rows.length <= 1) {
       // Apenas cabeçalho ou sem dados
-      return { maiorPontuacao: 1000 } // Valor padrão mínimo
+      return { maiorPontuacao: 0 }
     }
 
     // Procurar a maior pontuação total (coluna J - índice 9)
-    let maiorPontuacao = 1000 // Valor padrão mínimo (para o brinde 6)
+    // Só considerar pontuações maiores que 1000
+    let maiorPontuacao = 1000 // Valor padrão mínimo
 
     rows.slice(1).forEach(row => {
-      // Coluna J (índice 9) é o total
-      let total = parseInt(row[9] || '0') || 0
-      
-      // Se não tiver total calculado, calcular a partir dos pontos individuais
-      if (total === 0 && row.length > 9) {
-        const pontos = {
-          1: parseInt(row[4] || '0') || 0,
-          2: parseInt(row[5] || '0') || 0,
-          3: parseInt(row[6] || '0') || 0,
-          4: parseInt(row[7] || '0') || 0,
-          5: parseInt(row[8] || '0') || 0
-        }
-        total = pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5]
+      // Calcular pontos individuais (colunas E, F, G, H, I - índices 4, 5, 6, 7, 8)
+      const pontos = {
+        1: parseInt(row[4] || '0', 10) || 0,
+        2: parseInt(row[5] || '0', 10) || 0,
+        3: parseInt(row[6] || '0', 10) || 0,
+        4: parseInt(row[7] || '0', 10) || 0,
+        5: parseInt(row[8] || '0', 10) || 0
       }
       
-      if (total > maiorPontuacao) {
+      // Calcular total a partir dos pontos individuais
+      const totalCalculado = pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5]
+      
+      // Tentar obter o total da coluna J (índice 9)
+      const totalColunaJ = parseInt(row[9] || '0', 10) || 0
+      
+      // Usar o maior valor entre o total calculado e o total da coluna J
+      const total = Math.max(totalCalculado, totalColunaJ)
+      
+      // Só considerar pontuações maiores que 1000
+      if (total > 1000 && total > maiorPontuacao) {
         maiorPontuacao = total
       }
     })
     
-    // Se não encontrou nenhum usuário com mais de 1000 pontos, retorna 1000
-    return { maiorPontuacao: maiorPontuacao < 1000 ? 1000 : maiorPontuacao }
+    return { maiorPontuacao }
   } catch (error) {
     console.error('Erro ao buscar maior pontuação:', error)
     throw error

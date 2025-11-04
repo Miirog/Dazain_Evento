@@ -194,3 +194,4 @@ npm run build
 3. ✅ Teste todas as funcionalidades
 4. ✅ Verifique logs se houver erros
 
+

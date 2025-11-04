@@ -116,3 +116,4 @@ Se feito corretamente, você receberá:
 
 **Resumo:** Use **Body > raw > JSON**, NUNCA use **Params** para este endpoint! 🎯
 
+
