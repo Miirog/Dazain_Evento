@@ -3,7 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao } from './services/sheetsService.js'
+import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao, getUsuarioByTelefone, updateBrindesResgatados } from './services/sheetsService.js'
 
 dotenv.config()
 
@@ -50,6 +50,71 @@ app.post('/api/submit', async (req, res) => {
     console.error('Erro ao processar formulário:', error)
     res.status(500).json({
       message: 'Erro ao salvar dados. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// Endpoint para buscar dados completos do usuário
+app.get('/api/usuarios/:telefone', async (req, res) => {
+  try {
+    const { telefone } = req.params
+
+    if (!telefone) {
+      return res.status(400).json({
+        message: 'Telefone é obrigatório'
+      })
+    }
+
+    const usuario = await getUsuarioByTelefone(telefone)
+
+    if (!usuario) {
+      return res.status(404).json({
+        message: 'Usuário não encontrado'
+      })
+    }
+
+    res.json({
+      success: true,
+      usuario
+    })
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error)
+    res.status(500).json({
+      message: 'Erro ao buscar usuário. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// Endpoint para atualizar brindes resgatados de um usuário
+app.post('/api/usuarios/:telefone/brindes', async (req, res) => {
+  try {
+    const { telefone } = req.params
+    const { brindesResgatados } = req.body
+
+    if (!telefone) {
+      return res.status(400).json({
+        message: 'Telefone é obrigatório'
+      })
+    }
+
+    if (!brindesResgatados || typeof brindesResgatados !== 'object') {
+      return res.status(400).json({
+        message: 'Brindes resgatados são obrigatórios'
+      })
+    }
+
+    const usuarioAtualizado = await updateBrindesResgatados({ telefone, brindesResgatados })
+
+    res.json({
+      success: true,
+      usuario: usuarioAtualizado
+    })
+  } catch (error) {
+    console.error('Erro ao atualizar brindes resgatados:', error)
+    res.status(500).json({
+      message: error.message || 'Erro ao atualizar brindes. Tente novamente mais tarde.',
       error: error.message
     })
   }

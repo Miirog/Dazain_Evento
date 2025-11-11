@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './MedalHub.css'
+import { BRINDES_INFO, BRINDE_IDS } from '../constants/brindes'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-// Informações dos brindes
-const BRINDES_INFO = {
-  1: { nome: 'Brinde 1', descricao: 'Primeira conquista!', cor: '#FF007F', pontosRequisito: 100 },
-  2: { nome: 'Brinde 2', descricao: 'Seguindo firme!', cor: '#39FF14', pontosRequisito: 400 },
-  3: { nome: 'Brinde 3', descricao: 'Meio do caminho!', cor: '#3D026D', pontosRequisito: 600 },
-  4: { nome: 'Brinde 4', descricao: 'Quase lá!', cor: '#FF007F', pontosRequisito: 800 },
-  5: { nome: 'Brinde 5', descricao: 'Excelência alcançada!', cor: '#1E002B', pontosRequisito: 1000 },
-  6: { nome: 'Brinde 6', descricao: 'Lenda absoluta!', cor: '#FFD700', pontosRequisito: 1000 } // Será atualizado dinamicamente
-}
+const defaultBrindesState = () =>
+  BRINDE_IDS.reduce((acc, id) => {
+    acc[id] = false
+    return acc
+  }, {})
 
 function MedalHub({ telefone }) {
   const [pontosUsuario, setPontosUsuario] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 })
@@ -26,6 +23,7 @@ function MedalHub({ telefone }) {
     5: 1000,
     6: 1000
   })
+  const [brindesResgatados, setBrindesResgatados] = useState(() => defaultBrindesState())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -37,12 +35,20 @@ function MedalHub({ telefone }) {
       const response = await axios.get(`${API_URL}/pontos/${telefone}`)
       const pontos = response.data.pontos || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
       const total = response.data.total || 0
+      const brindes = response.data.brindesResgatados || defaultBrindesState()
       setPontosUsuario(pontos)
       setPontosTotal(total)
+      setBrindesResgatados(() => {
+        const base = defaultBrindesState()
+        return { ...base, ...brindes }
+      })
       setError('')
       
       // Salvar no localStorage
-      localStorage.setItem(`pontos_${telefone}`, JSON.stringify({ pontos, total }))
+      localStorage.setItem(
+        `pontos_${telefone}`,
+        JSON.stringify({ pontos, total, brindesResgatados: brindes })
+      )
     } catch (err) {
       console.error('Erro ao buscar pontos:', err)
       setError('Erro ao carregar pontos')
@@ -75,9 +81,13 @@ function MedalHub({ telefone }) {
       const cachedPontos = localStorage.getItem(`pontos_${telefone}`)
       if (cachedPontos) {
         try {
-          const { pontos, total } = JSON.parse(cachedPontos)
+          const { pontos, total, brindesResgatados: brindes } = JSON.parse(cachedPontos)
           setPontosUsuario(pontos)
           setPontosTotal(total)
+          setBrindesResgatados(() => {
+            const base = defaultBrindesState()
+            return { ...base, ...brindes }
+          })
           // Não mostrar loading se já tiver cache
           fetchPontos(true)
         } catch (err) {
@@ -99,28 +109,35 @@ function MedalHub({ telefone }) {
     const info = BRINDES_INFO[brindeId]
     const pontosRequisito = requisitosBrindes[brindeId] || info.pontosRequisito
     const desbloqueado = pontosTotal >= pontosRequisito
+    const resgatado = Boolean(brindesResgatados[brindeId])
     
     return (
       <div 
         key={brindeId} 
-        className={`medalha-card ${desbloqueado ? 'conquistada' : 'bloqueada'}`}
+        className={`medalha-card ${desbloqueado ? 'conquistada' : 'bloqueada'} ${resgatado ? 'resgatada' : ''}`}
         style={desbloqueado ? { borderColor: info.cor } : {}}
       >
         <div 
           className="medalha-icon"
           style={desbloqueado ? { color: info.cor } : {}}
         >
-          {desbloqueado ? '🎁' : '🔒'}
+          {desbloqueado ? (resgatado ? '✅' : '🎁') : '🔒'}
         </div>
         <h3 className="medalha-nome">{info.nome}</h3>
         <p className="medalha-descricao">{info.descricao}</p>
-        {desbloqueado ? (
-          <div className="badge-conquistada" style={{ backgroundColor: info.cor }}>
-            Desbloqueado!
-          </div>
-        ) : (
+        {!desbloqueado && (
           <div className="badge-bloqueada">
             {pontosRequisito} pontos necessários
+          </div>
+        )}
+        {desbloqueado && !resgatado && (
+          <div className="badge-disponivel" style={{ borderColor: info.cor, color: info.cor }}>
+            Disponível para resgate
+          </div>
+        )}
+        {desbloqueado && resgatado && (
+          <div className="badge-resgatado" style={{ backgroundColor: info.cor }}>
+            Brinde resgatado
           </div>
         )}
       </div>
@@ -139,6 +156,7 @@ function MedalHub({ telefone }) {
     const requisito = requisitosBrindes[id] || BRINDES_INFO[id].pontosRequisito
     return pontosTotal >= requisito
   }).length
+  const brindesResgatadosCount = Object.values(brindesResgatados).filter(Boolean).length
 
   return (
     <div className="medal-hub">
@@ -154,7 +172,7 @@ function MedalHub({ telefone }) {
       </div>
 
       <p className="hub-subtitle">
-        Você desbloqueou {brindesDesbloqueados} de {Object.keys(BRINDES_INFO).length} brindes!
+        Você desbloqueou {brindesDesbloqueados} de {Object.keys(BRINDES_INFO).length} brindes e já resgatou {brindesResgatadosCount}.
       </p>
       
       {error && <div className="error-message">{error}</div>}

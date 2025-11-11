@@ -59,9 +59,30 @@ async function ensureSheetExists(sheets, spreadsheetId, sheetTitle) {
   }
 }
 
+const SHEET_RANGE_FULL = 'Usuarios!A:P'
+const HEADER_RANGE = 'Usuarios!A1:P1'
+const HEADER_VALUES = [
+  'Nome',
+  'Email',
+  'Telefone',
+  'Empresa',
+  'PontosAtivacao1',
+  'PontosAtivacao2',
+  'PontosAtivacao3',
+  'PontosAtivacao4',
+  'PontosAtivacao5',
+  'PontosTotal',
+  'Brinde1Resgatado',
+  'Brinde2Resgatado',
+  'Brinde3Resgatado',
+  'Brinde4Resgatado',
+  'Brinde5Resgatado',
+  'Brinde6Resgatado'
+]
+
 export async function submitToSheets({ nome, email, telefone, empresa }) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:J' // Atualizado para incluir coluna J (PontosTotal)
+  const range = SHEET_RANGE_FULL
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -80,17 +101,21 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   try {
     const headerResponse = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Usuarios!A1:J1'
+      range: HEADER_RANGE
     })
 
-    // Se não houver cabeçalho, adiciona
-    if (!headerResponse.data.values || headerResponse.data.values.length === 0) {
+    const headerValues = headerResponse.data.values?.[0] || []
+    const headerNeedsUpdate =
+      headerValues.length < HEADER_VALUES.length ||
+      HEADER_VALUES.some((value, index) => headerValues[index] !== value)
+
+    if (headerNeedsUpdate) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Usuarios!A1:J1',
+        range: HEADER_RANGE,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'PontosAtivacao1', 'PontosAtivacao2', 'PontosAtivacao3', 'PontosAtivacao4', 'PontosAtivacao5', 'PontosTotal']]
+          values: [HEADER_VALUES]
         }
       })
     }
@@ -101,10 +126,10 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       await new Promise(resolve => setTimeout(resolve, 1000))
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: 'Usuarios!A1:J1',
+        range: HEADER_RANGE,
         valueInputOption: 'USER_ENTERED',
         resource: {
-          values: [['Nome', 'Email', 'Telefone', 'Empresa', 'PontosAtivacao1', 'PontosAtivacao2', 'PontosAtivacao3', 'PontosAtivacao4', 'PontosAtivacao5', 'PontosTotal']]
+          values: [HEADER_VALUES]
         }
       })
     } else {
@@ -115,7 +140,7 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
   // Verificar se usuário já existe
   const allData = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'Usuarios!A:J'
+    range: SHEET_RANGE_FULL
   })
 
   const rows = allData.data.values || []
@@ -143,14 +168,31 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
       range,
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: [[nome, email, telefoneNormalizado, empresa, '', '', '', '', '', '']]
+        values: [[
+          nome,
+          email,
+          telefoneNormalizado,
+          empresa,
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          'FALSE',
+          'FALSE',
+          'FALSE',
+          'FALSE',
+          'FALSE',
+          'FALSE'
+        ]]
       }
     })
     
     // Buscar a linha recém-criada e atualizar pontos com RAW
     const allDataAfter = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Usuarios!A:J'
+      range: SHEET_RANGE_FULL
     })
     const rowsAfter = allDataAfter.data.values || []
     const newUserRowIndex = rowsAfter.findIndex((row, index) => 
@@ -168,14 +210,23 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
           values: [[0, 0, 0, 0, 0, 0]]
         }
       })
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Usuarios!K${newRowNumber}:P${newRowNumber}`,
+        valueInputOption: 'RAW',
+        resource: {
+          values: [[false, false, false, false, false, false]]
+        }
+      })
     }
   }
 }
 
 // Função para buscar pontos de um usuário pelo telefone
-export async function getPontosByTelefone(telefone) {
+export async function getUsuarioByTelefone(telefone) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:J'
+  const range = SHEET_RANGE_FULL
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -198,14 +249,14 @@ export async function getPontosByTelefone(telefone) {
     
     if (rows.length <= 1) {
       // Apenas cabeçalho ou sem dados
-      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0 }
+      return null
     }
 
     // Procurar pelo telefone na coluna C (índice 2)
     const userRow = rows.slice(1).find(row => normalizeTelefone(row[2]) === telefoneNormalizado)
     
     if (!userRow) {
-      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0 }
+      return null
     }
 
     // Colunas de pontos são E, F, G, H, I (índices 4, 5, 6, 7, 8)
@@ -220,10 +271,98 @@ export async function getPontosByTelefone(telefone) {
     
     // Total pode estar na coluna J ou calcular
     const total = parseInt(userRow[9] || '0') || (pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5])
-    
-    return { pontos, total }
+
+    const brindesResgatados = {}
+    for (let i = 1; i <= 6; i++) {
+      const value = userRow[9 + i]
+      brindesResgatados[i] = ['true', '1', 'sim', 'yes', 'y']
+        .includes(String(value || '').trim().toLowerCase())
+    }
+
+    return {
+      nome: userRow[0] || '',
+      email: userRow[1] || '',
+      telefone: telefoneNormalizado,
+      empresa: userRow[3] || '',
+      pontos,
+      total,
+      brindesResgatados
+    }
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error)
+    throw error
+  }
+}
+
+export async function getPontosByTelefone(telefone) {
+  try {
+    const usuario = await getUsuarioByTelefone(telefone)
+
+    if (!usuario) {
+      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0, brindesResgatados: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false } }
+    }
+
+    return { pontos: usuario.pontos, total: usuario.total, brindesResgatados: usuario.brindesResgatados }
   } catch (error) {
     console.error('Erro ao buscar pontos:', error)
+    throw error
+  }
+}
+
+export async function updateBrindesResgatados({ telefone, brindesResgatados }) {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID
+  const range = SHEET_RANGE_FULL
+
+  if (!spreadsheetId) {
+    throw new Error('GOOGLE_SHEET_ID não configurado')
+  }
+
+  if (!telefone) {
+    throw new Error('Telefone é obrigatório')
+  }
+
+  const telefoneNormalizado = normalizeTelefone(telefone)
+
+  const authClient = await getAuthClient()
+  const sheets = google.sheets({ version: 'v4', auth: authClient })
+
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range
+    })
+
+    const rows = response.data.values || []
+
+    if (rows.length <= 1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const userRowIndex = rows.findIndex((row, index) => index > 0 && normalizeTelefone(row[2]) === telefoneNormalizado)
+
+    if (userRowIndex === -1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const rowNumber = userRowIndex + 1
+
+    const values = []
+    for (let i = 1; i <= 6; i++) {
+      values.push(Boolean(brindesResgatados?.[i]))
+    }
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Usuarios!K${rowNumber}:P${rowNumber}`,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [values]
+      }
+    })
+
+    return await getUsuarioByTelefone(telefoneNormalizado)
+  } catch (error) {
+    console.error('Erro ao atualizar brindes resgatados:', error)
     throw error
   }
 }
@@ -231,7 +370,7 @@ export async function getPontosByTelefone(telefone) {
 // Função para buscar a maior pontuação total de todos os usuários
 export async function getMaiorPontuacao() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:J'
+  const range = SHEET_RANGE_FULL
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
@@ -293,7 +432,7 @@ export async function getMaiorPontuacao() {
 // Função para adicionar/atualizar pontos de uma ativação
 export async function addPontosToUser({ telefone, ativacaoId, pontos }) {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
-  const range = 'Usuarios!A:J'
+  const range = SHEET_RANGE_FULL
 
   if (!spreadsheetId) {
     throw new Error('GOOGLE_SHEET_ID não configurado')
