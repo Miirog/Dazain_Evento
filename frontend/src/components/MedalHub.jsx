@@ -11,18 +11,16 @@ const defaultBrindesState = () =>
     return acc
   }, {})
 
+const initialRequisitosBrindes = BRINDE_IDS.reduce((acc, id) => {
+  acc[id] = BRINDES_INFO[id].pontosRequisito
+  return acc
+}, {})
+
 function MedalHub({ telefone }) {
   const [pontosUsuario, setPontosUsuario] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 })
   const [pontosTotal, setPontosTotal] = useState(0)
   const [maiorPontuacao, setMaiorPontuacao] = useState(1000)
-  const [requisitosBrindes, setRequisitosBrindes] = useState({
-    1: 100,
-    2: 400,
-    3: 600,
-    4: 800,
-    5: 1000,
-    6: 1000
-  })
+  const [requisitosBrindes, setRequisitosBrindes] = useState(initialRequisitosBrindes)
   const [brindesResgatados, setBrindesResgatados] = useState(() => defaultBrindesState())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -63,11 +61,13 @@ function MedalHub({ telefone }) {
       const maior = response.data.maiorPontuacao || 1000
       setMaiorPontuacao(maior)
       
-      // Atualizar o requisito do brinde 6
-      setRequisitosBrindes(prev => ({
-        ...prev,
-        6: maior
-      }))
+      const ultimoBrindeId = BRINDE_IDS[BRINDE_IDS.length - 1]
+      if (ultimoBrindeId) {
+        setRequisitosBrindes(prev => ({
+          ...prev,
+          [ultimoBrindeId]: Math.max(BRINDES_INFO[ultimoBrindeId].pontosRequisito, maior)
+        }))
+      }
     } catch (err) {
       console.error('Erro ao buscar maior pontuação:', err)
       // Usa valor padrão de 1000 se der erro
@@ -156,7 +156,7 @@ function MedalHub({ telefone }) {
     const requisito = requisitosBrindes[id] || BRINDES_INFO[id].pontosRequisito
     return pontosTotal >= requisito
   }).length
-  const brindesResgatadosCount = Object.values(brindesResgatados).filter(Boolean).length
+  const brindesResgatadosCount = BRINDE_IDS.filter(id => Boolean(brindesResgatados[id])).length
 
   return (
     <div className="medal-hub">

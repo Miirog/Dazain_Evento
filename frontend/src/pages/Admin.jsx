@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './Admin.css'
 import { BRINDES_INFO, BRINDE_IDS } from '../constants/brindes'
+import { ATIVACOES_INFO, ATIVACAO_IDS, getNomeAtivacao } from '../constants/ativacoes'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-const ATIVACAO_IDS = [1, 2, 3, 4, 5]
-
 function normalizeTelefone(telefone) {
   if (!telefone) return ''
   return telefone.replace(/\D/g, '')
@@ -236,7 +235,7 @@ function Admin() {
               <div className="admin-pontos-list">
                 {ATIVACAO_IDS.map((ativacaoId) => (
                   <label key={ativacaoId} className="admin-pontos-item">
-                    <span>Ativação {ativacaoId}</span>
+                    <span>{getNomeAtivacao(ativacaoId)}</span>
                     <input
                       type="number"
                       min="0"
