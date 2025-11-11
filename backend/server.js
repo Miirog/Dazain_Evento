@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
-import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao, getUsuarioByTelefone, updateBrindesResgatados } from './services/sheetsService.js'
+import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao, getUsuarioByTelefone, updateBrindesResgatados, updatePontosAdministrativos } from './services/sheetsService.js'
 
 dotenv.config()
 
@@ -117,6 +117,42 @@ app.post('/api/usuarios/:telefone/brindes', async (req, res) => {
     console.error('Erro ao atualizar brindes resgatados:', error)
     res.status(500).json({
       message: error.message || 'Erro ao atualizar brindes. Tente novamente mais tarde.',
+      error: error.message
+    })
+  }
+})
+
+// Endpoint para atualizar pontos por ativação (admin)
+app.post('/api/usuarios/:telefone/pontos', async (req, res) => {
+  try {
+    const { telefone } = req.params
+    const { pontos } = req.body
+
+    if (!telefone) {
+      return res.status(400).json({
+        message: 'Telefone é obrigatório'
+      })
+    }
+
+    if (!pontos || typeof pontos !== 'object') {
+      return res.status(400).json({
+        message: 'Pontos por ativação são obrigatórios'
+      })
+    }
+
+    const usuarioAtualizado = await updatePontosAdministrativos({
+      telefone,
+      pontosPorAtivacao: pontos
+    })
+
+    res.json({
+      success: true,
+      usuario: usuarioAtualizado
+    })
+  } catch (error) {
+    console.error('Erro ao atualizar pontos do usuário:', error)
+    res.status(500).json({
+      message: error.message || 'Erro ao atualizar pontos. Tente novamente mais tarde.',
       error: error.message
     })
   }

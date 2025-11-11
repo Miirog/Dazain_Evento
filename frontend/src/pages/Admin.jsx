@@ -4,6 +4,7 @@ import './Admin.css'
 import { BRINDES_INFO, BRINDE_IDS } from '../constants/brindes'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const ATIVACAO_IDS = [1, 2, 3, 4, 5]
 
 function normalizeTelefone(telefone) {
   if (!telefone) return ''
@@ -13,6 +14,12 @@ function normalizeTelefone(telefone) {
 const defaultBrindesState = () =>
   BRINDE_IDS.reduce((acc, id) => {
     acc[id] = false
+    return acc
+  }, {})
+
+const defaultPontosState = () =>
+  ATIVACAO_IDS.reduce((acc, id) => {
+    acc[id] = 0
     return acc
   }, {})
 
@@ -26,6 +33,10 @@ function Admin() {
   const [salvandoBrindes, setSalvandoBrindes] = useState(false)
   const [brindesFeedback, setBrindesFeedback] = useState('')
   const [brindesErro, setBrindesErro] = useState('')
+  const [pontosEdicao, setPontosEdicao] = useState(() => defaultPontosState())
+  const [salvandoPontos, setSalvandoPontos] = useState(false)
+  const [pontosFeedback, setPontosFeedback] = useState('')
+  const [pontosErro, setPontosErro] = useState('')
 
   useEffect(() => {
     if (usuario?.brindesResgatados) {
@@ -34,6 +45,13 @@ function Admin() {
     } else {
       setBrindesResgatados(defaultBrindesState())
     }
+    if (usuario?.pontos) {
+      setPontosEdicao({ ...defaultPontosState(), ...usuario.pontos })
+    } else {
+      setPontosEdicao(defaultPontosState())
+    }
+    setPontosFeedback('')
+    setPontosErro('')
   }, [usuario])
 
   const handleSubmit = async (event) => {
@@ -52,6 +70,8 @@ function Admin() {
     setHasSearched(true)
     setBrindesFeedback('')
     setBrindesErro('')
+    setPontosFeedback('')
+    setPontosErro('')
     setUsuario(null)
 
     try {
@@ -68,6 +88,9 @@ function Admin() {
       setBrindesResgatados(defaultBrindesState())
       setBrindesFeedback('')
       setBrindesErro('')
+      setPontosEdicao(defaultPontosState())
+      setPontosFeedback('')
+      setPontosErro('')
     } finally {
       setLoading(false)
     }
@@ -80,6 +103,15 @@ function Admin() {
     }))
     setBrindesFeedback('')
     setBrindesErro('')
+  }
+
+  const handleChangePontos = (ativacaoId, value) => {
+    setPontosEdicao((prev) => ({
+      ...prev,
+      [ativacaoId]: value === '' ? '' : Math.max(0, Math.floor(Number(value) || 0))
+    }))
+    setPontosFeedback('')
+    setPontosErro('')
   }
 
   const handleSalvarBrindes = async () => {
@@ -103,6 +135,39 @@ function Admin() {
       setSalvandoBrindes(false)
     }
   }
+
+  const handleSalvarPontos = async () => {
+    if (!usuario) return
+    setSalvandoPontos(true)
+    setPontosFeedback('')
+    setPontosErro('')
+    try {
+      const payload = ATIVACAO_IDS.reduce((acc, id) => {
+        const valor = pontosEdicao[id]
+        acc[id] = valor === '' ? 0 : Math.max(0, Math.floor(Number(valor) || 0))
+        return acc
+      }, {})
+
+      const response = await axios.post(`${API_URL}/usuarios/${usuario.telefone}/pontos`, {
+        pontos: payload
+      })
+      setUsuario(response.data.usuario)
+      setPontosFeedback('Pontuação atualizada com sucesso!')
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setPontosErro('Usuário não encontrado.')
+      } else {
+        setPontosErro(err.response?.data?.message || 'Erro ao atualizar pontos. Tente novamente.')
+      }
+    } finally {
+      setSalvandoPontos(false)
+    }
+  }
+
+  const totalEditado = ATIVACAO_IDS.reduce((acc, id) => {
+    const valor = pontosEdicao[id]
+    return acc + (valor === '' ? 0 : Number(valor) || 0)
+  }, 0)
 
   return (
     <div className="admin-page">
@@ -166,16 +231,41 @@ function Admin() {
               <h2>Pontuação</h2>
               <div className="admin-total">
                 <span>Total</span>
-                <strong>{usuario.total?.toLocaleString('pt-BR') ?? '0'}</strong>
+                <strong>{totalEditado.toLocaleString('pt-BR')}</strong>
               </div>
-              <ul className="admin-pontos-list">
-                {Object.entries(usuario.pontos || {}).map(([ativacaoId, pontos]) => (
-                  <li key={ativacaoId}>
+              <div className="admin-pontos-list">
+                {ATIVACAO_IDS.map((ativacaoId) => (
+                  <label key={ativacaoId} className="admin-pontos-item">
                     <span>Ativação {ativacaoId}</span>
-                    <span>{Number(pontos).toLocaleString('pt-BR')}</span>
-                  </li>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={pontosEdicao[ativacaoId]}
+                      onChange={(event) => handleChangePontos(ativacaoId, event.target.value)}
+                      disabled={salvandoPontos}
+                    />
+                  </label>
                 ))}
-              </ul>
+              </div>
+              <button
+                type="button"
+                className="admin-save-pontos"
+                onClick={handleSalvarPontos}
+                disabled={salvandoPontos}
+              >
+                {salvandoPontos ? 'Salvando...' : 'Salvar pontuação'}
+              </button>
+              {pontosFeedback && (
+                <div className="admin-feedback sucesso">
+                  {pontosFeedback}
+                </div>
+              )}
+              {pontosErro && (
+                <div className="admin-feedback erro">
+                  {pontosErro}
+                </div>
+              )}
             </section>
 
             <section className="admin-card">

@@ -367,6 +367,96 @@ export async function updateBrindesResgatados({ telefone, brindesResgatados }) {
   }
 }
 
+export async function updatePontosAdministrativos({ telefone, pontosPorAtivacao }) {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID
+  const range = SHEET_RANGE_FULL
+
+  if (!spreadsheetId) {
+    throw new Error('GOOGLE_SHEET_ID não configurado')
+  }
+
+  if (!telefone) {
+    throw new Error('Telefone é obrigatório')
+  }
+
+  if (!pontosPorAtivacao || typeof pontosPorAtivacao !== 'object') {
+    throw new Error('Pontos por ativação inválidos')
+  }
+
+  const telefoneNormalizado = normalizeTelefone(telefone)
+
+  const authClient = await getAuthClient()
+  const sheets = google.sheets({ version: 'v4', auth: authClient })
+
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range
+    })
+
+    const rows = response.data.values || []
+
+    if (rows.length <= 1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const userRowIndex = rows.findIndex((row, index) => index > 0 && normalizeTelefone(row[2]) === telefoneNormalizado)
+
+    if (userRowIndex === -1) {
+      throw new Error('Usuário não encontrado')
+    }
+
+    const rowNumber = userRowIndex + 1
+    const userRow = rows[userRowIndex]
+
+    const pontosAtuais = {
+      1: parseInt(userRow[4] || '0', 10) || 0,
+      2: parseInt(userRow[5] || '0', 10) || 0,
+      3: parseInt(userRow[6] || '0', 10) || 0,
+      4: parseInt(userRow[7] || '0', 10) || 0,
+      5: parseInt(userRow[8] || '0', 10) || 0
+    }
+
+    const novosPontos = { ...pontosAtuais }
+
+    for (let i = 1; i <= 5; i++) {
+      if (Object.prototype.hasOwnProperty.call(pontosPorAtivacao, i)) {
+        const valor = pontosPorAtivacao[i]
+        if (valor === '' || valor === null || valor === undefined) {
+          novosPontos[i] = 0
+        } else if (Number.isFinite(Number(valor)) && Number(valor) >= 0) {
+          novosPontos[i] = Math.floor(Number(valor))
+        } else {
+          throw new Error(`Valor inválido para a ativação ${i}`)
+        }
+      }
+    }
+
+    const novoTotal = novosPontos[1] + novosPontos[2] + novosPontos[3] + novosPontos[4] + novosPontos[5]
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `Usuarios!E${rowNumber}:J${rowNumber}`,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [[
+          novosPontos[1],
+          novosPontos[2],
+          novosPontos[3],
+          novosPontos[4],
+          novosPontos[5],
+          novoTotal
+        ]]
+      }
+    })
+
+    return await getUsuarioByTelefone(telefoneNormalizado)
+  } catch (error) {
+    console.error('Erro ao atualizar pontos administrativamente:', error)
+    throw error
+  }
+}
+
 // Função para buscar a maior pontuação total de todos os usuários
 export async function getMaiorPontuacao() {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID
