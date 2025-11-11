@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { submitToSheets, getMedalhasByTelefone, addMedalhaToUser, getPontosByTelefone, addPontosToUser, getMaiorPontuacao, getUsuarioByTelefone, updateBrindesResgatados } from './services/sheetsService.js'
 
@@ -12,14 +13,15 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 5000
+const FRONTEND_DIST_PATH = path.join(__dirname, '..', 'frontend', 'dist')
+const HAS_FRONTEND_BUILD = fs.existsSync(path.join(FRONTEND_DIST_PATH, 'index.html'))
 
 app.use(cors())
 app.use(express.json())
 
-// Servir arquivos estáticos do frontend em produção
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '..', 'frontend', 'dist')
-  app.use(express.static(frontendPath))
+// Servir arquivos estáticos do frontend quando o build existir
+if (HAS_FRONTEND_BUILD) {
+  app.use(express.static(FRONTEND_DIST_PATH))
 }
 
 // Health check
@@ -248,18 +250,20 @@ app.post('/api/medalhas', async (req, res) => {
   }
 })
 
-// Rota para servir o frontend em produção
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    const frontendPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html')
-    res.sendFile(frontendPath)
+// Rota para servir o frontend quando o build existir
+if (HAS_FRONTEND_BUILD) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'Endpoint não encontrado' })
+    }
+    res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'))
   })
 }
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`)
-  if (process.env.NODE_ENV === 'production') {
-    console.log(`Frontend sendo servido estaticamente`)
+  if (HAS_FRONTEND_BUILD) {
+    console.log(`Frontend sendo servido a partir de ${FRONTEND_DIST_PATH}`)
   }
 })
 
