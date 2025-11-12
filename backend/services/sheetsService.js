@@ -59,8 +59,8 @@ async function ensureSheetExists(sheets, spreadsheetId, sheetTitle) {
   }
 }
 
-const SHEET_RANGE_FULL = 'Usuarios!A:P'
-const HEADER_RANGE = 'Usuarios!A1:P1'
+const SHEET_RANGE_FULL = 'Usuarios!A:O'
+const HEADER_RANGE = 'Usuarios!A1:O1'
 const HEADER_VALUES = [
   'Nome',
   'Email',
@@ -76,8 +76,7 @@ const HEADER_VALUES = [
   'Brinde2Resgatado',
   'Brinde3Resgatado',
   'Brinde4Resgatado',
-  'Brinde5Resgatado',
-  'Brinde6Resgatado'
+  'Brinde5Resgatado'
 ]
 
 export async function submitToSheets({ nome, email, telefone, empresa }) {
@@ -183,7 +182,6 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
           'FALSE',
           'FALSE',
           'FALSE',
-          'FALSE',
           'FALSE'
         ]]
       }
@@ -213,10 +211,10 @@ export async function submitToSheets({ nome, email, telefone, empresa }) {
 
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Usuarios!K${newRowNumber}:P${newRowNumber}`,
+        range: `Usuarios!K${newRowNumber}:O${newRowNumber}`,
         valueInputOption: 'RAW',
         resource: {
-          values: [[false, false, false, false, false, false]]
+          values: [[false, false, false, false, false]]
         }
       })
     }
@@ -273,7 +271,7 @@ export async function getUsuarioByTelefone(telefone) {
     const total = parseInt(userRow[9] || '0') || (pontos[1] + pontos[2] + pontos[3] + pontos[4] + pontos[5])
 
     const brindesResgatados = {}
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 5; i++) {
       const value = userRow[9 + i]
       brindesResgatados[i] = ['true', '1', 'sim', 'yes', 'y']
         .includes(String(value || '').trim().toLowerCase())
@@ -299,7 +297,7 @@ export async function getPontosByTelefone(telefone) {
     const usuario = await getUsuarioByTelefone(telefone)
 
     if (!usuario) {
-      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0, brindesResgatados: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false } }
+      return { pontos: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, total: 0, brindesResgatados: { 1: false, 2: false, 3: false, 4: false, 5: false } }
     }
 
     return { pontos: usuario.pontos, total: usuario.total, brindesResgatados: usuario.brindesResgatados }
@@ -347,13 +345,13 @@ export async function updateBrindesResgatados({ telefone, brindesResgatados }) {
     const rowNumber = userRowIndex + 1
 
     const values = []
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 5; i++) {
       values.push(Boolean(brindesResgatados?.[i]))
     }
 
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `Usuarios!K${rowNumber}:P${rowNumber}`,
+      range: `Usuarios!K${rowNumber}:O${rowNumber}`,
       valueInputOption: 'RAW',
       resource: {
         values: [values]

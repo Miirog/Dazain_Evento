@@ -99,7 +99,7 @@ function MedalHub({ telefone }) {
         fetchPontos()
       }
       
-      // Buscar maior pontuação para definir o brinde 6
+      // Buscar maior pontuação para ajustar o requisito do último brinde
       fetchMaiorPontuacao()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
